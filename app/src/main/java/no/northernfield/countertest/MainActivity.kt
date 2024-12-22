@@ -43,7 +43,10 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun CounterScreen(bus: CounterEventBus) {
-    val state by CounterPresenter(events = bus.events)
+    val state by counterPresenter(
+        key = "counter",
+        events = bus.events,
+    )
     Log.d("MainActivity", "Creating CounterScreen")
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column(

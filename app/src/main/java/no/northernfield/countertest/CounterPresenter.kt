@@ -3,7 +3,6 @@ package no.northernfield.countertest
 import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
-import androidx.compose.runtime.produceState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.onFailure
@@ -43,8 +42,8 @@ class CounterEventBus {
 data class CounterState(val count: Int = 0)
 
 @Composable
-fun CounterPresenter(events: Flow<CounterEvent>): State<CounterState> =
-    produceState(CounterState()) {
+fun counterPresenter(key: String, events: Flow<CounterEvent>): State<CounterState> =
+    produceRetainedState(key, CounterState()) {
         launch(Dispatchers.IO) {
             Log.d("CounterPresenter", "Collecting from events")
             events.collect { event ->
