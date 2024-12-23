@@ -1,13 +1,9 @@
 package no.northernfield.countertest
 
-import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.onFailure
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import no.northernfield.countertest.CounterEvent.Decrement
 import no.northernfield.countertest.CounterEvent.Increment
@@ -19,35 +15,13 @@ sealed interface CounterEvent {
     object Reset : CounterEvent
 }
 
-class CounterEventBus {
-    private val _events = Channel<CounterEvent>()
-    val events = _events.receiveAsFlow()
-
-    fun increment() {
-        _events.trySend(Increment)
-            .onFailure { Log.d("CounterEvent", "Could not send Increment") }
-    }
-
-    fun decrement() {
-        _events.trySend(Decrement)
-            .onFailure { Log.d("CounterEvent", "Could not send Decrement") }
-    }
-
-    fun reset() {
-        _events.trySend(Reset)
-            .onFailure { Log.d("CounterEvent", "Could not send Reset") }
-    }
-}
-
 data class CounterState(val count: Int = 0)
 
 @Composable
 fun counterPresenter(key: String, events: Flow<CounterEvent>): State<CounterState> =
     produceRetainedState(key, CounterState()) {
         launch(Dispatchers.IO) {
-            Log.d("CounterPresenter", "Collecting from events")
             events.collect { event ->
-                Log.d("CounterPresenter", "Received event: $event")
                 value = when (event) {
                     Increment -> value.copy(count = value.count + 1)
                     Decrement -> value.copy(count = value.count - 1)

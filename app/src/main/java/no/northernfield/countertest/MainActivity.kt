@@ -1,7 +1,6 @@
 package no.northernfield.countertest
 
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -24,6 +23,9 @@ import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import no.northernfield.countertest.CounterEvent.Decrement
+import no.northernfield.countertest.CounterEvent.Increment
+import no.northernfield.countertest.CounterEvent.Reset
 import no.northernfield.countertest.ui.theme.CounterTestTheme
 
 class MainActivity : ComponentActivity() {
@@ -32,22 +34,34 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            Log.d("MainActivity", "Setting content")
             CounterTestTheme {
-
-                CounterScreen(CounterEventBus())
+                CounterScreen(eventBus())
             }
         }
     }
 }
 
 @Composable
-fun CounterScreen(bus: CounterEventBus) {
+fun CounterScreen(bus: EventBus<CounterEvent>) {
     val state by counterPresenter(
         key = "counter",
         events = bus.events,
     )
-    Log.d("MainActivity", "Creating CounterScreen")
+    CounterScreenContent(
+        state = state,
+        onDecrement = { bus.send(Decrement) },
+        onReset = { bus.send(Reset) },
+        onIncrement = { bus.send(Increment) },
+    )
+}
+
+@Composable
+fun CounterScreenContent(
+    state: CounterState,
+    onDecrement: () -> Unit,
+    onReset: () -> Unit,
+    onIncrement: () -> Unit,
+) {
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column(
             modifier = Modifier
@@ -58,17 +72,17 @@ fun CounterScreen(bus: CounterEventBus) {
         ) {
             Text("Counter: ${state.count}")
             Row(modifier = Modifier.padding(top = 16.dp)) {
-                Button(onClick = bus::decrement) {
+                Button(onClick = onDecrement) {
                     Icon(
                         Icons.Default.KeyboardArrowDown,
                         "Decrement"
                     )
                 }
                 Button(
-                    onClick = bus::reset,
+                    onClick = onReset,
                     modifier = Modifier.padding(horizontal = 8.dp)
                 ) { Icon(Icons.Default.Refresh, "Reset") }
-                Button(onClick = bus::increment) {
+                Button(onClick = onIncrement) {
                     Icon(
                         Icons.Default.KeyboardArrowUp,
                         "Increment"
@@ -81,6 +95,11 @@ fun CounterScreen(bus: CounterEventBus) {
 
 @Preview
 @Composable
-fun PreviewCounterScreen() {
-    CounterScreen(CounterEventBus())
+fun PreviewCounterScreenContent() {
+    CounterScreenContent(
+        state = CounterState(42),
+        onDecrement = {},
+        onReset = {},
+        onIncrement = {},
+    )
 }
