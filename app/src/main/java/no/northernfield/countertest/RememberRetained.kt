@@ -29,9 +29,9 @@ object RememberRetainedRegistry {
         key: String,
         block: @DisallowComposableCalls () -> T,
     ): T {
-        val value = block()
         val rememberedValue = value(key)
         val result = if (rememberedValue == null) {
+            val value = block()
             registerValue(key, value)
             value
         } else {

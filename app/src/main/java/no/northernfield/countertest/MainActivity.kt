@@ -35,23 +35,20 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             CounterTestTheme {
-                CounterScreen(eventBus())
+                CounterScreen()
             }
         }
     }
 }
 
 @Composable
-fun CounterScreen(bus: EventBus<CounterEvent>) {
-    val state by counterPresenter(
-        key = "counter",
-        events = bus.events,
-    )
+fun CounterScreen() {
+    val state by counterPresenter("counter")
     CounterScreenContent(
         state = state,
-        onDecrement = { bus.send(Decrement) },
-        onReset = { bus.send(Reset) },
-        onIncrement = { bus.send(Increment) },
+        onDecrement = { state.sink(Decrement) },
+        onReset = { state.sink(Reset) },
+        onIncrement = { state.sink(Increment) },
     )
 }
 
@@ -97,7 +94,7 @@ fun CounterScreenContent(
 @Composable
 fun PreviewCounterScreenContent() {
     CounterScreenContent(
-        state = CounterState(42),
+        state = CounterState(42, {}),
         onDecrement = {},
         onReset = {},
         onIncrement = {},

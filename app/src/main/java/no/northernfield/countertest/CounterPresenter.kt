@@ -2,8 +2,9 @@ package no.northernfield.countertest
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import no.northernfield.countertest.CounterEvent.Decrement
 import no.northernfield.countertest.CounterEvent.Increment
@@ -15,18 +16,29 @@ sealed interface CounterEvent {
     object Reset : CounterEvent
 }
 
-data class CounterState(val count: Int = 0)
+data class CounterState(
+    val count: Int,
+    val sink: (CounterEvent) -> Unit,
+)
 
 @Composable
-fun counterPresenter(key: String, events: Flow<CounterEvent>): State<CounterState> =
-    produceRetainedState(key, CounterState()) {
+fun counterPresenter(key: String): State<CounterState> {
+    val uiEventSink by rememberRetained("$key-UiEventSink") { mutableStateOf(UiEventSink<CounterEvent>()) }
+    return produceRetainedState(
+        key = key,
+        initialValue = CounterState(
+            count = 0,
+            sink = uiEventSink::sink,
+        )
+    ) {
         launch(Dispatchers.IO) {
-            events.collect { event ->
+            uiEventSink.collect { event ->
                 value = when (event) {
                     Increment -> value.copy(count = value.count + 1)
                     Decrement -> value.copy(count = value.count - 1)
-                    Reset -> CounterState()
+                    Reset -> value.copy(count = 0)
                 }
             }
         }
     }
+}
