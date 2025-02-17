@@ -32,16 +32,16 @@ class CounterEventBus {
     }
 }
 
-data class CounterState(val count: Int = 0)
+data class CounterState(val count: Int)
 
 @Composable
 fun counterPresenter(events: Flow<CounterEvent>): State<CounterState> =
-    produceState(CounterState()) {
+    produceState(CounterState(0)) {
         events.onEach {
             value = when (it) {
                 Increment -> value.copy(count = value.count + 1)
                 Decrement -> value.copy(count = value.count - 1)
-                Reset -> CounterState()
+                Reset -> CounterState(0)
             }
         }.launchIn(this)
     }
