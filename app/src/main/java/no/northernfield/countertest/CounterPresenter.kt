@@ -36,9 +36,7 @@ data class CounterState(val count: Int = 0)
 fun counterPresenter(events: Flow<CounterEvent>): State<CounterState> =
     produceState(CounterState()) {
         launch(Dispatchers.IO) {
-            Log.d("CounterPresenter", "Collecting from events")
             events.collect { event ->
-                Log.d("CounterPresenter", "Received event: $event")
                 value = when (event) {
                     Increment -> value.copy(count = value.count + 1)
                     Decrement -> value.copy(count = value.count - 1)

@@ -32,9 +32,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
 
         setContent {
-            Log.d("MainActivity", "Setting content")
             CounterTestTheme {
-
                 CounterScreen(CounterEventBus())
             }
         }
@@ -44,7 +42,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun CounterScreen(bus: CounterEventBus) {
     val state by counterPresenter(events = bus.events)
-    Log.d("MainActivity", "Creating CounterScreen")
+    Log.d("CounterScreen", "CounterScreen recomposed with counter value to: ${state.count}")
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column(
             modifier = Modifier
