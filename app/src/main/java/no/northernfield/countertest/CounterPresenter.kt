@@ -35,7 +35,7 @@ data class CounterState(val count: Int = 0)
 @Composable
 fun counterPresenter(events: Flow<CounterEvent>): State<CounterState> =
     produceState(CounterState()) {
-        launch(Dispatchers.IO) {
+        launch {
             events.collect { event ->
                 value = when (event) {
                     Increment -> value.copy(count = value.count + 1)
