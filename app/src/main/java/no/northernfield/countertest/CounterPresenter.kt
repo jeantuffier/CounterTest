@@ -8,6 +8,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.onFailure
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import no.northernfield.countertest.CounterEvent.Decrement
@@ -35,13 +37,11 @@ data class CounterState(val count: Int = 0)
 @Composable
 fun counterPresenter(events: Flow<CounterEvent>): State<CounterState> =
     produceState(CounterState()) {
-        launch {
-            events.collect { event ->
-                value = when (event) {
-                    Increment -> value.copy(count = value.count + 1)
-                    Decrement -> value.copy(count = value.count - 1)
-                    Reset -> CounterState()
-                }
+        events.onEach {
+            value = when (it) {
+                Increment -> value.copy(count = value.count + 1)
+                Decrement -> value.copy(count = value.count - 1)
+                Reset -> CounterState()
             }
-        }
+        }.launchIn(this)
     }
