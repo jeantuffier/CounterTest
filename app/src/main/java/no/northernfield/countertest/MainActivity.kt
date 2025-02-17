@@ -43,7 +43,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun CounterScreen(bus: CounterEventBus) {
-    val state by CounterPresenter(events = bus.events)
+    val state by counterPresenter(events = bus.events)
     Log.d("MainActivity", "Creating CounterScreen")
     Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
         Column(
@@ -55,17 +55,17 @@ fun CounterScreen(bus: CounterEventBus) {
         ) {
             Text("Counter: ${state.count}")
             Row(modifier = Modifier.padding(top = 16.dp)) {
-                Button(onClick = bus::decrement) {
+                Button(onClick = { bus.produceEvent(CounterEvent.Decrement) }) {
                     Icon(
                         Icons.Default.KeyboardArrowDown,
                         "Decrement"
                     )
                 }
                 Button(
-                    onClick = bus::reset,
+                    onClick = { bus.produceEvent(CounterEvent.Reset) },
                     modifier = Modifier.padding(horizontal = 8.dp)
                 ) { Icon(Icons.Default.Refresh, "Reset") }
-                Button(onClick = bus::increment) {
+                Button(onClick = { bus.produceEvent(CounterEvent.Increment) }) {
                     Icon(
                         Icons.Default.KeyboardArrowUp,
                         "Increment"

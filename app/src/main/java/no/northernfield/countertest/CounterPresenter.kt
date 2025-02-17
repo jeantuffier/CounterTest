@@ -24,26 +24,16 @@ class CounterEventBus {
     private val _events = Channel<CounterEvent>()
     val events = _events.receiveAsFlow()
 
-    fun increment() {
-        _events.trySend(Increment)
-            .onFailure { Log.d("CounterEvent", "Could not send Increment") }
-    }
-
-    fun decrement() {
-        _events.trySend(Decrement)
-            .onFailure { Log.d("CounterEvent", "Could not send Decrement") }
-    }
-
-    fun reset() {
-        _events.trySend(Reset)
-            .onFailure { Log.d("CounterEvent", "Could not send Reset") }
+    fun produceEvent(event: CounterEvent) {
+        _events.trySend(event)
+            .onFailure { Log.d("CounterEvent", "Could not send $event") }
     }
 }
 
 data class CounterState(val count: Int = 0)
 
 @Composable
-fun CounterPresenter(events: Flow<CounterEvent>): State<CounterState> =
+fun counterPresenter(events: Flow<CounterEvent>): State<CounterState> =
     produceState(CounterState()) {
         launch(Dispatchers.IO) {
             Log.d("CounterPresenter", "Collecting from events")
