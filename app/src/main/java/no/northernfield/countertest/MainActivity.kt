@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import no.northernfield.countertest.CounterEvent.Decrement
@@ -67,9 +68,12 @@ fun CounterScreenContent(
             horizontalAlignment = CenterHorizontally,
             verticalArrangement = Center,
         ) {
-            Text("Counter: ${state.count}")
+            Text(
+                text = "Counter: ${state.count}",
+                modifier = Modifier.testTag("counter")
+            )
             Row(modifier = Modifier.padding(top = 16.dp)) {
-                Button(onClick = onDecrement) {
+                Button(onClick = onDecrement, modifier = Modifier.testTag("decrement")) {
                     Icon(
                         Icons.Default.KeyboardArrowDown,
                         "Decrement"
@@ -77,9 +81,9 @@ fun CounterScreenContent(
                 }
                 Button(
                     onClick = onReset,
-                    modifier = Modifier.padding(horizontal = 8.dp)
+                    modifier = Modifier.padding(horizontal = 8.dp).testTag("reset")
                 ) { Icon(Icons.Default.Refresh, "Reset") }
-                Button(onClick = onIncrement) {
+                Button(onClick = onIncrement, modifier = Modifier.testTag("increment")) {
                     Icon(
                         Icons.Default.KeyboardArrowUp,
                         "Increment"
