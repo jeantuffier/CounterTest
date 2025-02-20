@@ -2,12 +2,16 @@ package no.northernfield.countertest
 
 import android.content.pm.ActivityInfo
 import androidx.activity.compose.setContent
+import androidx.compose.runtime.State
 import androidx.compose.ui.test.assertTextContains
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.performClick
-import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import junit.framework.TestCase.assertEquals
+import no.northernfield.countertest.CounterEvent.Decrement
+import no.northernfield.countertest.CounterEvent.Increment
+import no.northernfield.countertest.CounterEvent.Reset
 import no.northernfield.countertest.ui.theme.CounterTestTheme
 import org.junit.Rule
 import org.junit.Test
@@ -18,6 +22,25 @@ class CounterPresenterTest {
 
     @get:Rule
     val composeTestRule = createAndroidComposeRule<MainActivity>()
+
+    @Test
+    fun testCounterPresenter() {
+        val bus = CounterEventBus()
+        composeTestRule.activity.setContent {
+            val state = counterPresenter("counter", bus.events)
+            assertEquals(0, state.value.count)
+
+            bus.produceEvent(Increment)
+            bus.produceEvent(Increment)
+            assertEquals(2, state.value.count)
+
+            bus.produceEvent(Reset)
+            assertEquals(0, state.value.count)
+
+            bus.produceEvent(Decrement)
+            assertEquals(-1, state.value.count)
+        }
+    }
 
     @Test
     fun testRetainedState() {
