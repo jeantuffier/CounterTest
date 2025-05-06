@@ -13,32 +13,14 @@ import kotlin.coroutines.CoroutineContext
 object RememberRetainedRegistry {
     private val values = mutableMapOf<String, Any>()
 
-    fun isRegistered(key: String) = values.keys.any { it == key }
-
-    private fun <T : Any> registerValue(key: String, state: T) {
-        values[key] = state
-    }
-
-    private fun value(key: String): Any? {
-        if (!isRegistered(key)) return null
-        return values[key]
-    }
+    private fun value(key: String): Any? =
+        if (values.keys.any { it == key }) values[key] else null
 
     @Suppress("UNCHECKED_CAST")
     fun <T : Any> cache(
         key: String,
         block: @DisallowComposableCalls () -> T,
-    ): T {
-        val rememberedValue = value(key)
-        val result = if (rememberedValue == null) {
-            val value = block()
-            registerValue(key, value)
-            value
-        } else {
-            rememberedValue as T
-        }
-        return result
-    }
+    ): T = value(key)?.let { it as T } ?: block().also { values[key] = it }
 }
 
 @Composable
