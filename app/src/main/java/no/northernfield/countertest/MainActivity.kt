@@ -46,7 +46,7 @@ class MainActivity : ComponentActivity() {
 fun CounterScreen(bus: CounterEventBus) {
     val state by counterPresenter("counter", bus.events)
     CounterScreenContent(
-        state = state,
+        count = state.count,
         onDecrement = { bus.produceEvent(Decrement) },
         onReset = { bus.produceEvent(Reset) },
         onIncrement = { bus.produceEvent(Increment) },
@@ -55,7 +55,7 @@ fun CounterScreen(bus: CounterEventBus) {
 
 @Composable
 fun CounterScreenContent(
-    state: CounterState,
+    count: Int,
     onDecrement: () -> Unit,
     onReset: () -> Unit,
     onIncrement: () -> Unit,
@@ -69,7 +69,7 @@ fun CounterScreenContent(
             verticalArrangement = Center,
         ) {
             Text(
-                text = "Counter: ${state.count}",
+                text = "Counter: $count",
                 modifier = Modifier.testTag("counter")
             )
             Row(modifier = Modifier.padding(top = 16.dp)) {
@@ -98,7 +98,7 @@ fun CounterScreenContent(
 @Composable
 fun PreviewCounterScreenContent() {
     CounterScreenContent(
-        state = CounterState(42),
+        count = 42,
         onDecrement = {},
         onReset = {},
         onIncrement = {},
