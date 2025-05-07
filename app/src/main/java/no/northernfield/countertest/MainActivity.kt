@@ -28,9 +28,11 @@ import no.northernfield.countertest.CounterEvent.Decrement
 import no.northernfield.countertest.CounterEvent.Increment
 import no.northernfield.countertest.CounterEvent.Reset
 import no.northernfield.countertest.navigation.Graph
-import no.northernfield.countertest.navigation.Screen
-import no.northernfield.countertest.navigation.ScreenKey
-import no.northernfield.countertest.navigation.graph
+import no.northernfield.countertest.ScreenKey.COUNTER_1
+import no.northernfield.countertest.ScreenKey.COUNTER_2
+import no.northernfield.countertest.ScreenKey.COUNTER_3
+import no.northernfield.countertest.navigation.LocalNavigator
+import no.northernfield.countertest.navigation.Navigator
 import no.northernfield.countertest.navigation.screen
 
 class MainActivity : ComponentActivity() {
@@ -44,14 +46,20 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+enum class ScreenKey {
+    COUNTER_1,
+    COUNTER_2,
+    COUNTER_3,
+}
+
 @Composable
 fun App() {
-    graph {
-        (1..3).forEach {
-            val key = ScreenKey("counter $it")
-            screen(key, it == 1) { CounterScreen(key, EventBus()) }
-        }
-    }.screens.first { it.root }.content()
+    val navigator = Navigator()
+    Graph(root = COUNTER_1.name, navigator) {
+        screen(COUNTER_1.name) { CounterScreen(COUNTER_1, EventBus()) }
+        screen(COUNTER_2.name) { CounterScreen(COUNTER_2, EventBus()) }
+        screen(COUNTER_3.name) { CounterScreen(COUNTER_3, EventBus()) }
+    }
 }
 
 @Composable
@@ -82,7 +90,7 @@ fun CounterScreenContent(
             horizontalAlignment = CenterHorizontally,
             verticalArrangement = Center,
         ) {
-            Text("Key: ${key.value}")
+            Text("Key: $key")
             Text(
                 text = "Counter: $count",
                 modifier = Modifier.testTag("counter")
@@ -107,13 +115,14 @@ fun CounterScreenContent(
                     )
                 }
             }
-            Button(onClick = { }, modifier = Modifier.padding(top = 48.dp)) {
+            val navigator = LocalNavigator.current
+            Button(onClick = { navigator.navigateTo(COUNTER_1.name) }, modifier = Modifier.padding(top = 48.dp)) {
                 Text("counter 1")
             }
-            Button(onClick = { }, modifier = Modifier.padding(horizontal = 8.dp)) {
+            Button(onClick = { navigator.navigateTo(COUNTER_2.name) }, modifier = Modifier.padding(horizontal = 8.dp)) {
                 Text("counter 2")
             }
-            Button(onClick = { }) {
+            Button(onClick = { navigator.navigateTo(COUNTER_3.name) }) {
                 Text("counter 3")
             }
         }
@@ -124,7 +133,7 @@ fun CounterScreenContent(
 @Composable
 fun PreviewCounterScreenContent() {
     CounterScreenContent(
-        key = ScreenKey("counter 1"),
+        key = COUNTER_1,
         count = 42,
         onDecrement = {},
         onReset = {},
