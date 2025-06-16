@@ -45,8 +45,6 @@ class GenericRegistry : RememberRetainedRegistry<String, Any> {
     override val values: MutableMap<String, Any> = mutableMapOf()
 }
 
-
-
 @Composable
 fun <T : Any> rememberRetained(
     key: String,
@@ -59,19 +57,6 @@ fun <KEY, VALUE> rememberRetained(
     registry: RememberRetainedRegistry<KEY, VALUE>,
     calculation: @DisallowComposableCalls () -> VALUE
 ): VALUE = registry.cache(key, calculation)
-
-@Composable
-fun <T> produceRetainedState(
-    key: String,
-    initialValue: T,
-    producer: suspend ProduceStateScope<T>.() -> Unit
-): State<T> {
-    val result = rememberRetained(key) { mutableStateOf(initialValue) }
-    LaunchedEffect(Unit) {
-        ProduceRetainedStateScopeImpl(result, coroutineContext).producer()
-    }
-    return result
-}
 
 @Composable
 fun <KEY, VALUE> produceRetainedState(

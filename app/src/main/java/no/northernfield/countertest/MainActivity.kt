@@ -1,6 +1,7 @@
 package no.northernfield.countertest
 
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -25,30 +26,29 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberBottomAppBarState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entry
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.ui.NavDisplay
+import kotlinx.serialization.Serializable
 import no.northernfield.countertest.CounterEvent.Decrement
 import no.northernfield.countertest.CounterEvent.Increment
 import no.northernfield.countertest.CounterEvent.Reset
-import no.northernfield.countertest.ScreenKey.COUNTER_1
-import no.northernfield.countertest.ScreenKey.COUNTER_2
-import no.northernfield.countertest.ScreenKey.COUNTER_3
-import no.northernfield.countertest.navigation.Graph
-import no.northernfield.countertest.navigation.NavigationEvent
+import no.northernfield.countertest.ScreenKey.Counter1
+import no.northernfield.countertest.ScreenKey.Counter2
+import no.northernfield.countertest.ScreenKey.Counter3
+import no.northernfield.countertest.ScreenKey.NestedScreen
 import no.northernfield.countertest.navigation.rememberNavigationRegistry
-import no.northernfield.countertest.navigation.rememberNavigator
-import no.northernfield.countertest.navigation.screen
 import kotlin.random.Random
 
 class MainActivity : ComponentActivity() {
@@ -62,68 +62,85 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-enum class ScreenKey {
-    COUNTER_1,
-    COUNTER_2,
-    COUNTER_3,
-    NESTED_SCREEN,
+sealed interface ScreenKey : NavKey {
+    @Serializable
+    object Counter1 : ScreenKey
+
+    @Serializable
+    object Counter2 : ScreenKey
+
+    @Serializable
+    object Counter3 : ScreenKey
+
+    @Serializable
+    object NestedScreen : ScreenKey
 }
 
 sealed interface Screen {
     val key: ScreenKey
 
-    enum class TopLevel (
+    enum class TopLevel(
         override val key: ScreenKey,
         val selectedIcon: ImageVector,
         val unselectedIcon: ImageVector,
-    ): Screen {
-        Counter1(COUNTER_1, Icons.Filled.Home, Icons.Outlined.Home),
-        Counter2(COUNTER_2, Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder),
-        Counter3(COUNTER_3, Icons.Filled.Star, Icons.Outlined.Star),
+    ) : Screen {
+        Counter1(ScreenKey.Counter1, Icons.Filled.Home, Icons.Outlined.Home),
+        Counter2(ScreenKey.Counter2, Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder),
+        Counter3(ScreenKey.Counter3, Icons.Filled.Star, Icons.Outlined.Star),
     }
 
     data object NestedScreen : Screen {
-        override val key = ScreenKey.NESTED_SCREEN
+        override val key = ScreenKey.NestedScreen
     }
 }
 
 @Composable
 fun App() {
-    val navigator = rememberNavigator<ScreenKey>()
-    var selectedItem by rememberRetained("selectedItem") { mutableIntStateOf(0) }
+    val backStack = rememberNavBackStack<ScreenKey>(Counter1)
     Scaffold(
         bottomBar = {
             NavigationBar {
-                Screen.TopLevel.entries.forEachIndexed { index, screen ->
+                Screen.TopLevel.entries.forEach { screen ->
                     NavigationBarItem(
                         icon = {
                             Icon(
-                                imageVector = if (selectedItem == index) screen.selectedIcon else screen.unselectedIcon,
+                                imageVector = if (backStack.last() == screen.key) screen.selectedIcon else screen.unselectedIcon,
                                 contentDescription = null
                             )
                         },
-                        label = { Text(screen.key.name) },
-                        selected = selectedItem == index,
-                        onClick = {
-                            selectedItem = index
-                            navigator.navigateTo(screen.key)
-                        }
+                        label = { Text(screen.key::class.java.simpleName) },
+                        selected = backStack.last() == screen.key,
+                        onClick = { backStack.add(screen.key) }
                     )
                 }
             }
         }
     ) { padding ->
-        Graph(modifier = Modifier.padding(padding), COUNTER_1) {
-            screen(COUNTER_1) { CounterScreen(COUNTER_1, EventBus()) }
-            screen(COUNTER_2) { CounterScreen(COUNTER_2, EventBus()) }
-            screen(COUNTER_3) { CounterScreen(COUNTER_3, EventBus()) }
-            screen(ScreenKey.NESTED_SCREEN) { NestedScreen() }
+
+        val nestedNavigation: () -> Unit = {
+            Log.d("CounterScreen", "Navigating to Nested Screen")
+            backStack.add(NestedScreen)
         }
+
+        NavDisplay(
+            modifier = Modifier.padding(padding),
+            backStack = backStack,
+            onBack = {
+                backStack.removeLastOrNull()
+            },
+
+            entryProvider = entryProvider {
+                entry<Counter1> { CounterScreen(Counter1, EventBus(), nestedNavigation) }
+                entry<Counter2> { CounterScreen(Counter2, EventBus(), nestedNavigation) }
+                entry<Counter3> { CounterScreen(Counter3, EventBus(), nestedNavigation) }
+                entry<NestedScreen> { NestedScreen { backStack.removeLastOrNull() } }
+            },
+        )
     }
 }
 
 @Composable
-fun CounterScreen(key: ScreenKey, bus: EventBus<CounterEvent>) {
+fun CounterScreen(key: ScreenKey, bus: EventBus<CounterEvent>, onNavigate: () -> Unit) {
     val state by counterPresenter(key, bus.events)
     CounterScreenContent(
         key = key,
@@ -131,6 +148,7 @@ fun CounterScreen(key: ScreenKey, bus: EventBus<CounterEvent>) {
         onDecrement = { bus.produceEvent(Decrement) },
         onReset = { bus.produceEvent(Reset) },
         onIncrement = { bus.produceEvent(Increment) },
+        onNavigate = onNavigate,
     )
 }
 
@@ -141,13 +159,14 @@ fun CounterScreenContent(
     onDecrement: () -> Unit,
     onReset: () -> Unit,
     onIncrement: () -> Unit,
+    onNavigate: () -> Unit,
 ) {
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = CenterHorizontally,
         verticalArrangement = Center,
     ) {
-        Text("Key: $key")
+        Text("Key: ${key::class.java.simpleName}")
         Text(
             text = "Counter: $count",
             modifier = Modifier.testTag("counter")
@@ -172,27 +191,34 @@ fun CounterScreenContent(
                 )
             }
         }
-        val navigator = rememberNavigator<ScreenKey>()
-        Button(onClick = { navigator.navigateTo(ScreenKey.NESTED_SCREEN) }, modifier = Modifier.testTag("nestedNavigation")) {
+
+        Button(
+            onClick = onNavigate,
+            modifier = Modifier.testTag("nestedNavigation")
+        ) {
             Text("Navigate to Nested Screen")
         }
     }
 }
 
 @Composable
-fun NestedScreen() {
+fun NestedScreen(onBack: () -> Unit) {
+    Log.d("NestedScreen", "recomposition of NestedScreen")
     Column(
         modifier = Modifier.fillMaxSize(),
         horizontalAlignment = CenterHorizontally,
         verticalArrangement = Center,
     ) {
         val state by rememberRetained(
-            key = ScreenKey.NESTED_SCREEN,
+            key = NestedScreen,
             registry = rememberNavigationRegistry<ScreenKey, Int>(),
         ) { mutableIntStateOf(Random.nextInt()) }
+
         Text("Nested Screen: $state")
-        val navigator = rememberNavigator<ScreenKey>()
-        Button(onClick = { navigator.pop() }, modifier = Modifier.testTag("nestedNavigation")) {
+        Button(
+            onClick = onBack,
+            modifier = Modifier.testTag("nestedNavigation")
+        ) {
             Text("Navigate to Nested Screen")
         }
     }
@@ -202,10 +228,11 @@ fun NestedScreen() {
 @Composable
 fun PreviewCounterScreenContent() {
     CounterScreenContent(
-        key = COUNTER_1,
+        key = Counter1,
         count = 42,
         onDecrement = {},
         onReset = {},
         onIncrement = {},
+        onNavigate = {},
     )
 }
