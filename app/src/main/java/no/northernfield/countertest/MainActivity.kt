@@ -39,6 +39,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entry
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.serialization.Serializable
 import no.northernfield.countertest.CounterEvent.Decrement
@@ -125,10 +126,10 @@ fun App() {
         NavDisplay(
             modifier = Modifier.padding(padding),
             backStack = backStack,
-            onBack = {
-                backStack.removeLastOrNull()
-            },
-
+            onBack = { backStack.removeLastOrNull() },
+            entryDecorators = listOf(
+                rememberSavedStateNavEntryDecorator()
+            ),
             entryProvider = entryProvider {
                 entry<Counter1> { CounterScreen(Counter1, EventBus(), nestedNavigation) }
                 entry<Counter2> { CounterScreen(Counter2, EventBus(), nestedNavigation) }

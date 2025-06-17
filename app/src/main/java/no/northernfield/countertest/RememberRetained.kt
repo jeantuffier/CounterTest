@@ -8,6 +8,7 @@ import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.ProduceStateScope
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.CoroutineContext
 
@@ -34,7 +35,7 @@ interface RememberRetainedRegistry<KEY, VALUE> {
             GenericRegistry()
         }
 
-        fun <T: Any> cache(
+        fun <T : Any> cache(
             key: String,
             block: @DisallowComposableCalls () -> T,
         ): T = defaultRegistry.cache(key, block) as T
@@ -66,6 +67,18 @@ fun <KEY, VALUE> produceRetainedState(
     producer: suspend ProduceStateScope<VALUE>.() -> Unit
 ): State<VALUE> {
     val result = rememberRetained(key, registry) { mutableStateOf(initialValue) }
+    LaunchedEffect(Unit) {
+        ProduceRetainedStateScopeImpl(result, coroutineContext).producer()
+    }
+    return result
+}
+
+@Composable
+fun <T> produceSaveableState(
+    initialValue: T,
+    producer: suspend ProduceStateScope<T>.() -> Unit
+): State<T> {
+    val result = rememberSaveable { mutableStateOf(initialValue) }
     LaunchedEffect(Unit) {
         ProduceRetainedStateScopeImpl(result, coroutineContext).producer()
     }
